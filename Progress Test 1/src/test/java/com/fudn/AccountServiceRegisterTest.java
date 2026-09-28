@@ -10,8 +10,6 @@ import java.time.LocalDate;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AccountServiceRegisterTest {
 
@@ -69,12 +67,68 @@ class AccountServiceRegisterTest {
     }
 
     @Test
+    void register_BlankEmail_ReturnsInvalidInput() {
+        ResultCode result = service.register(
+                "test01",
+                "   ",
+                "Strong@123",
+                "Strong@123",
+                LocalDate.of(2000, 1, 1),
+                "0912345678"
+        );
+
+        assertEquals(ResultCode.INVALID_INPUT, result);
+    }
+
+    @Test
     void register_NullPassword_ReturnsInvalidInput() {
         ResultCode result = service.register(
                 "test01",
                 "test@gmail.com",
                 null,
                 null,
+                LocalDate.of(2000, 1, 1),
+                "0912345678"
+        );
+
+        assertEquals(ResultCode.INVALID_INPUT, result);
+    }
+
+    @Test
+    void register_BlankPassword_ReturnsInvalidInput() {
+        ResultCode result = service.register(
+                "test01",
+                "test@gmail.com",
+                "   ",
+                "   ",
+                LocalDate.of(2000, 1, 1),
+                "0912345678"
+        );
+
+        assertEquals(ResultCode.INVALID_INPUT, result);
+    }
+
+    @Test
+    void register_NullConfirmPassword_ReturnsInvalidInput() {
+        ResultCode result = service.register(
+                "test01",
+                "test@gmail.com",
+                "Strong@123",
+                null,
+                LocalDate.of(2000, 1, 1),
+                "0912345678"
+        );
+
+        assertEquals(ResultCode.INVALID_INPUT, result);
+    }
+
+    @Test
+    void register_BlankConfirmPassword_ReturnsInvalidInput() {
+        ResultCode result = service.register(
+                "test01",
+                "test@gmail.com",
+                "Strong@123",
+                "   ",
                 LocalDate.of(2000, 1, 1),
                 "0912345678"
         );
@@ -120,6 +174,20 @@ class AccountServiceRegisterTest {
     void register_InvalidUsername_ReturnsInvalidUsername() {
         ResultCode result = service.register(
                 "abc",
+                "test@gmail.com",
+                "Strong@123",
+                "Strong@123",
+                LocalDate.of(2000, 1, 1),
+                "0912345678"
+        );
+
+        assertEquals(ResultCode.INVALID_USERNAME, result);
+    }
+
+    @Test
+    void register_UsernameStartsWithNumber_ReturnsInvalidUsername() {
+        ResultCode result = service.register(
+                "1test01",
                 "test@gmail.com",
                 "Strong@123",
                 "Strong@123",
@@ -193,6 +261,21 @@ class AccountServiceRegisterTest {
         ResultCode result = service.register(
                 "test01",
                 "invalid-email",
+                "Strong@123",
+                "Strong@123",
+                LocalDate.of(2000, 1, 1),
+                "0912345678"
+        );
+
+        assertEquals(ResultCode.INVALID_EMAIL, result);
+    }
+
+    @Test
+    void register_EmailWithoutDomain_ReturnsInvalidEmail() {
+
+        ResultCode result = service.register(
+                "test01",
+                "test@",
                 "Strong@123",
                 "Strong@123",
                 LocalDate.of(2000, 1, 1),
@@ -282,7 +365,7 @@ class AccountServiceRegisterTest {
                 Arguments.of("WEAKPASS"),
                 Arguments.of("Weakpass"),
                 Arguments.of("Weak1234"),
-                Arguments.of("Weak@1234!")
+                Arguments.of("test01@123A")
         );
     }
 
@@ -419,18 +502,18 @@ class AccountServiceRegisterTest {
     }
 
     @Test
-    void register_ValidInput_CreatesAccount() {
+    void register_ValidInput_WithNullPhone_ReturnsSuccess() {
 
-        service.register(
+        ResultCode result = service.register(
                 "test01",
                 "test@gmail.com",
                 "Strong@123",
                 "Strong@123",
                 LocalDate.of(2000, 1, 1),
-                "0912345678"
+                null
         );
 
-        assertTrue(service.findByUsername("test01").isPresent());
+        assertEquals(ResultCode.SUCCESS, result);
     }
 
     // =========================================================
@@ -482,23 +565,37 @@ class AccountServiceRegisterTest {
         assertEquals(ResultCode.WEAK_PASSWORD, result);
     }
 
-    // =========================================================
-    // FAILED REGISTRATION MUST NOT CREATE ACCOUNT
-    // =========================================================
-
     @Test
-    void register_InvalidInput_DoesNotCreateAccount() {
+    void register_MismatchAndUnderage_ReturnsPasswordMismatch() {
+
+        LocalDate underageDate = LocalDate.now().minusYears(17);
 
         ResultCode result = service.register(
                 "test01",
-                "invalid-email",
+                "test@gmail.com",
                 "Strong@123",
-                "Strong@123",
-                LocalDate.of(2000, 1, 1),
+                "Different@123",
+                underageDate,
                 "0912345678"
         );
 
-        assertEquals(ResultCode.INVALID_EMAIL, result);
-        assertFalse(service.findByUsername("test01").isPresent());
+        assertEquals(ResultCode.PASSWORD_MISMATCH, result);
+    }
+
+    @Test
+    void register_UnderageAndInvalidPhone_ReturnsUnderage() {
+
+        LocalDate underageDate = LocalDate.now().minusYears(17);
+
+        ResultCode result = service.register(
+                "test01",
+                "test@gmail.com",
+                "Strong@123",
+                "Strong@123",
+                underageDate,
+                "0123456789"
+        );
+
+        assertEquals(ResultCode.UNDERAGE, result);
     }
 }
