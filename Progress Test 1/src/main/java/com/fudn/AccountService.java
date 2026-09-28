@@ -142,10 +142,60 @@ public class AccountService {
         throw new UnsupportedOperationException("TODO");
     }
 
-    public ResultCode disableAccount(String username) {
-        throw new UnsupportedOperationException("TODO");
-    }
+    public ResultCode login(String username, String password) {
 
+        // BR-LOG-01: Username hoặc password bị thiếu
+        if (isBlank(username) || isBlank(password)) {
+            return ResultCode.INVALID_INPUT;
+        }
+
+        // BR-LOG-02, BR-LOG-03:
+        // Tìm account theo username không phân biệt hoa thường
+        Account account = accountsByUsername.get(key(username));
+
+        if (account == null) {
+            return ResultCode.INVALID_CREDENTIALS;
+        }
+
+        // BR-LOG-04:
+        // Account đã bị disable
+        if (account.getStatus() == AccountStatus.DISABLED) {
+            return ResultCode.ACCOUNT_DISABLED;
+        }
+
+        // BR-LOG-06:
+        // Account đang bị khóa
+        // Không tăng failedAttempts nữa
+        if (account.isLocked()) {
+            return ResultCode.ACCOUNT_LOCKED;
+        }
+
+        // BR-LOG-03, BR-LOG-05:
+        // Kiểm tra password
+        if (!PasswordHasher.matches(
+                account.getSalt(),
+                password,
+                account.getCurrentPasswordHash())) {
+
+            // Tăng số lần đăng nhập sai
+            account.incrementFailedAttempts();
+
+            // Đủ 5 lần sai -> khóa tài khoản
+            if (account.getFailedAttempts() >= MAX_FAILED_ATTEMPTS) {
+                account.lock();
+                return ResultCode.ACCOUNT_LOCKED;
+            }
+
+            // Chưa đủ 5 lần
+            return ResultCode.INVALID_CREDENTIALS;
+        }
+
+        // BR-LOG-08:
+        // Login thành công -> reset số lần đăng nhập sai
+        account.resetFailedAttempts();
+
+        return ResultCode.SUCCESS;
+    }
     public Optional<Account> findByUsername(String username) {
         throw new UnsupportedOperationException("TODO");
     }
