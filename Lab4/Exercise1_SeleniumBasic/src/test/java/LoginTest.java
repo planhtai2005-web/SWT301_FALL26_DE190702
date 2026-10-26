@@ -11,6 +11,7 @@ import org.junit.jupiter.api.MethodOrderer;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.CsvFileSource;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -39,7 +40,7 @@ public class LoginTest {
 
         ChromeOptions options = new ChromeOptions();
 
-        // Chặn JavaScript theo cấu hình bài lab
+        // Chan JavaScript theo cau hinh bai lab
         Map<String, Object> prefs = new HashMap<>();
         prefs.put(
                 "profile.managed_default_content_settings.javascript",
@@ -55,6 +56,7 @@ public class LoginTest {
         driver.manage().window().maximize();
     }
 
+    // TODO 2: Dang nhap thanh cong
     @Test
     @Order(1)
     @DisplayName("Should login successfully with valid credentials")
@@ -79,13 +81,14 @@ public class LoginTest {
                 successMsg.getText().contains(
                         "You logged into a secure area!"
                 ),
-                "Không thấy thông báo đăng nhập thành công"
+                "Khong thay thong bao dang nhap thanh cong"
         );
     }
 
+    // TODO 2: Dang nhap that bai
     @Test
     @Order(2)
-    @DisplayName("Should display error when logging in with invalid credentials")
+    @DisplayName("Should display error with invalid credentials")
     void testLoginFail() {
         driver.get("https://the-internet.herokuapp.com/login");
 
@@ -104,19 +107,20 @@ public class LoginTest {
 
         assertTrue(
                 errorMsg.getText().contains("Your username is invalid!"),
-                "Không thấy thông báo lỗi username"
+                "Khong thay thong bao loi username"
         );
     }
 
+    // TODO 3: Parameterized test voi @CsvSource
     @Order(3)
     @ParameterizedTest(
-            name = "[{index}] user=''{0}'' pass=''{1}'' → {2}"
+            name = "[{index}] user=''{0}'' pass=''{1}'' -> {2}"
     )
     @CsvSource({
-            "tomsmith,  SuperSecretPassword!, success",
+            "tomsmith, SuperSecretPassword!, success",
             "wronguser, SuperSecretPassword!, error",
-            "tomsmith,  wrongpassword,        error",
-            "'',        '',                   error"
+            "tomsmith, wrongpassword, error",
+            "'', '', error"
     })
     @DisplayName("Multiple login attempts using @CsvSource")
     void testLoginWithMultipleParameters(
@@ -124,7 +128,38 @@ public class LoginTest {
             String password,
             String expectedResult
     ) {
+        verifyLogin(username, password, expectedResult);
+    }
+
+    // TODO 4: Parameterized test doc du lieu tu file CSV
+    @Order(4)
+    @ParameterizedTest(
+            name = "CSV [{index}]: {0} / {1} -> {2}"
+    )
+    @CsvFileSource(
+            resources = "/login-data.csv",
+            numLinesToSkip = 1
+    )
+    @DisplayName("Login with data from external CSV file")
+    void testLoginWithCSV(
+            String username,
+            String password,
+            String expectedResult
+    ) {
+        verifyLogin(username, password, expectedResult);
+    }
+
+    // Ham dung chung cho TODO 3 va TODO 4
+    private void verifyLogin(
+            String username,
+            String password,
+            String expectedResult
+    ) {
         driver.get("https://the-internet.herokuapp.com/login");
+
+        // Xu ly gia tri null va khoang trang
+        username = (username == null) ? "" : username.trim();
+        password = (password == null) ? "" : password.trim();
 
         driver.findElement(By.id("username")).sendKeys(username);
         driver.findElement(By.id("password")).sendKeys(password);
@@ -133,7 +168,7 @@ public class LoginTest {
                 By.cssSelector("button[type='submit']")
         ).click();
 
-        By messageLocator = expectedResult.equals("success")
+        By messageLocator = "success".equals(expectedResult)
                 ? By.cssSelector(".flash.success")
                 : By.cssSelector(".flash.error");
 
@@ -143,17 +178,17 @@ public class LoginTest {
                 )
         );
 
-        if (expectedResult.equals("success")) {
+        if ("success".equals(expectedResult)) {
             assertTrue(
                     message.getText().contains(
                             "You logged into a secure area!"
                     ),
-                    "Không thấy thông báo đăng nhập thành công"
+                    "Khong thay thong bao dang nhap thanh cong"
             );
         } else {
             assertTrue(
                     message.getText().toLowerCase().contains("invalid"),
-                    "Không thấy thông báo lỗi đăng nhập"
+                    "Khong thay thong bao loi dang nhap"
             );
         }
     }
