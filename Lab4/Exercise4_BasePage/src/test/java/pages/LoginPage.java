@@ -14,8 +14,10 @@ public class LoginPage extends BasePage {
     private final By passwordField = By.id("password");
     private final By loginButton =
             By.cssSelector("button[type='submit']");
+
     private final By successMsg = By.cssSelector(".flash.success");
     private final By errorMsg = By.cssSelector(".flash.error");
+    private final By flashMessage = By.id("flash");
 
     public void navigate() {
         navigateTo("https://the-internet.herokuapp.com/login");
@@ -25,6 +27,14 @@ public class LoginPage extends BasePage {
         type(usernameField, username);
         type(passwordField, password);
         click(loginButton);
+    }
+
+    /**
+     * Dang nhap va tra ve Page Object cua trang Secure Area.
+     */
+    public SecureAreaPage loginAs(String username, String password) {
+        login(username, password);
+        return new SecureAreaPage(driver);
     }
 
     public By getSuccessLocator() {
@@ -37,5 +47,13 @@ public class LoginPage extends BasePage {
 
     public String getMessageText(By locator) {
         return getText(locator);
+    }
+
+    public String getFlashMessage() {
+        return getText(flashMessage);
+    }
+
+    public boolean isAt() {
+        return driver.getCurrentUrl().endsWith("/login");
     }
 }
