@@ -3,12 +3,9 @@ package pages;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import utils.ConfigReader;
 
 public class LoginPage extends BasePage {
-
-    public LoginPage(WebDriver driver) {
-        super(driver);
-    }
 
     private final By usernameField = By.id("username");
     private final By passwordField = By.id("password");
@@ -19,10 +16,22 @@ public class LoginPage extends BasePage {
     private final By errorMsg = By.cssSelector(".flash.error");
     private final By flashMessage = By.id("flash");
 
-    public void navigate() {
-        navigateTo("https://the-internet.herokuapp.com/login");
+    // Lay URL tu config.properties
+    private final String baseUrl = ConfigReader.get(
+            "baseUrl",
+            "https://the-internet.herokuapp.com"
+    );
+
+    public LoginPage(WebDriver driver) {
+        super(driver);
     }
 
+    // Mo trang Login
+    public void navigate() {
+        navigateTo(baseUrl + "/login");
+    }
+
+    // Dang nhap
     public void login(String username, String password) {
         type(usernameField, username);
         type(passwordField, password);
