@@ -1,6 +1,17 @@
 
 import io.github.bonigarcia.wdm.WebDriverManager;
-import org.junit.jupiter.api.*;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.MethodOrderer;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -28,6 +39,7 @@ public class LoginTest {
 
         ChromeOptions options = new ChromeOptions();
 
+        // Chặn JavaScript theo cấu hình bài lab
         Map<String, Object> prefs = new HashMap<>();
         prefs.put(
                 "profile.managed_default_content_settings.javascript",
@@ -94,6 +106,56 @@ public class LoginTest {
                 errorMsg.getText().contains("Your username is invalid!"),
                 "Không thấy thông báo lỗi username"
         );
+    }
+
+    @Order(3)
+    @ParameterizedTest(
+            name = "[{index}] user=''{0}'' pass=''{1}'' → {2}"
+    )
+    @CsvSource({
+            "tomsmith,  SuperSecretPassword!, success",
+            "wronguser, SuperSecretPassword!, error",
+            "tomsmith,  wrongpassword,        error",
+            "'',        '',                   error"
+    })
+    @DisplayName("Multiple login attempts using @CsvSource")
+    void testLoginWithMultipleParameters(
+            String username,
+            String password,
+            String expectedResult
+    ) {
+        driver.get("https://the-internet.herokuapp.com/login");
+
+        driver.findElement(By.id("username")).sendKeys(username);
+        driver.findElement(By.id("password")).sendKeys(password);
+
+        driver.findElement(
+                By.cssSelector("button[type='submit']")
+        ).click();
+
+        By messageLocator = expectedResult.equals("success")
+                ? By.cssSelector(".flash.success")
+                : By.cssSelector(".flash.error");
+
+        WebElement message = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        messageLocator
+                )
+        );
+
+        if (expectedResult.equals("success")) {
+            assertTrue(
+                    message.getText().contains(
+                            "You logged into a secure area!"
+                    ),
+                    "Không thấy thông báo đăng nhập thành công"
+            );
+        } else {
+            assertTrue(
+                    message.getText().toLowerCase().contains("invalid"),
+                    "Không thấy thông báo lỗi đăng nhập"
+            );
+        }
     }
 
     @AfterAll
