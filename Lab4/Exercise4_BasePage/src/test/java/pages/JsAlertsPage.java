@@ -1,0 +1,63 @@
+
+package pages;
+
+import org.openqa.selenium.Alert;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+
+public class JsAlertsPage extends BasePage {
+
+    private final By jsAlertBtn =
+            By.xpath("//button[text()='Click for JS Alert']");
+
+    private final By jsConfirmBtn =
+            By.xpath("//button[text()='Click for JS Confirm']");
+
+    private final By jsPromptBtn =
+            By.xpath("//button[text()='Click for JS Prompt']");
+
+    private final By result = By.id("result");
+
+    public JsAlertsPage(WebDriver driver) {
+        super(driver);
+    }
+
+    public JsAlertsPage open() {
+        navigateTo(
+                utils.ConfigReader.get(
+                        "baseUrl",
+                        "https://the-internet.herokuapp.com"
+                ) + "/javascript_alerts"
+        );
+        return this;
+    }
+
+    private Alert waitAlert() {
+        return wait.until(
+                ExpectedConditions.alertIsPresent()
+        );
+    }
+
+    public void acceptAlert() {
+        click(jsAlertBtn);
+        waitAlert().accept();
+    }
+
+    public void dismissConfirm() {
+        click(jsConfirmBtn);
+        waitAlert().dismiss();
+    }
+
+    public void answerPrompt(String text) {
+        click(jsPromptBtn);
+
+        Alert alert = waitAlert();
+        alert.sendKeys(text);
+        alert.accept();
+    }
+
+    public String getResult() {
+        return getText(result);
+    }
+}
